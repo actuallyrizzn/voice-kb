@@ -40,6 +40,13 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         settings = SecureSettingsStore(this)
+        if (!settings.isEncryptedStore) {
+            Toast.makeText(
+                this,
+                R.string.settings_storage_fallback_warning,
+                Toast.LENGTH_LONG,
+            ).show()
+        }
         binding.switchSanitize.isChecked = settings.sanitizeEnabled()
         binding.editVeniceKey.setText(settings.veniceApiKey())
 
@@ -60,6 +67,29 @@ class SettingsActivity : AppCompatActivity() {
             val result = withContext(Dispatchers.IO) {
                 try {
                     ModelLoadResult(models = VeniceApi.listTextModels(settings.veniceBaseUrl()), error = null)
+                } catch (ex: VeniceApi.VeniceApiException.Network) {
+                    ModelLoadResult(
+                        models = emptyList(),
+                        error = if (ex.message?.contains("connect", ignoreCase = true) == true) {
+                            R.string.settings_model_refresh_network_error
+                        } else {
+                            R.string.settings_model_refresh_failed
+                        },
+                    )
+                } catch (ex: VeniceApi.VeniceApiException.Parsing) {
+                    ModelLoadResult(
+                        models = emptyList(),
+                        error = R.string.settings_model_refresh_parse_error,
+                    )
+                } catch (ex: VeniceApi.VeniceApiException.Http) {
+                    ModelLoadResult(
+                        models = emptyList(),
+                        error = if (ex.code in 500..599) {
+                            R.string.settings_model_refresh_server_error
+                        } else {
+                            R.string.settings_model_refresh_failed
+                        },
+                    )
                 } catch (_: Exception) {
                     ModelLoadResult(models = emptyList(), error = R.string.settings_model_refresh_failed)
                 }

@@ -4,20 +4,40 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
+import java.security.GeneralSecurityException
 
 class SecureSettingsStore(context: Context) {
 
-    private val masterKey: MasterKey = MasterKey.Builder(context.applicationContext)
-        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-        .build()
+    private val appContext: Context = context.applicationContext
+    val isEncryptedStore: Boolean
+    val prefs: SharedPreferences
 
-    val prefs: SharedPreferences = EncryptedSharedPreferences.create(
-        context.applicationContext,
-        Prefs.FILE,
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
-    )
+    init {
+        var encryptedPrefs: SharedPreferences? = null
+        try {
+            val masterKey: MasterKey = MasterKey.Builder(appContext)
+                .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+                .build()
+
+            encryptedPrefs = EncryptedSharedPreferences.create(
+                appContext,
+                Prefs.FILE,
+                masterKey,
+                EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+            )
+        } catch (_: GeneralSecurityException) {
+            // Fall back to normal prefs when Android keystore is unavailable.
+        } catch (_: Exception) {
+            // Fall back to normal prefs for any runtime issues around encryption setup.
+        }
+
+        prefs = encryptedPrefs ?: appContext.getSharedPreferences(
+            Prefs.FILE,
+            Context.MODE_PRIVATE,
+        )
+        isEncryptedStore = encryptedPrefs != null
+    }
 
     fun veniceApiKey(): String = prefs.getString(Prefs.VENICE_API_KEY, "").orEmpty()
 

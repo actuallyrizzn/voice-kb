@@ -3,11 +3,13 @@ package com.actuallyrizzn.voicekb
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.inputmethodservice.InputMethodService
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
+import android.provider.Settings
 import android.view.View
 import android.view.inputmethod.InputConnection
 import androidx.core.content.ContextCompat
@@ -59,6 +61,7 @@ class VoiceKbInputMethodService : InputMethodService(), RecognitionListener {
             PackageManager.PERMISSION_GRANTED
         ) {
             b.imeStatus.setText(R.string.ime_need_mic_permission)
+            openAppPermissionSettings()
             return
         }
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
@@ -110,7 +113,10 @@ class VoiceKbInputMethodService : InputMethodService(), RecognitionListener {
         val resId = when (error) {
             SpeechRecognizer.ERROR_AUDIO -> R.string.ime_error_no_speech
             SpeechRecognizer.ERROR_CLIENT -> R.string.ime_error_recognition
-            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> R.string.ime_need_mic_permission
+            SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> {
+                openAppPermissionSettings()
+                R.string.ime_need_mic_permission
+            }
             SpeechRecognizer.ERROR_NETWORK,
             SpeechRecognizer.ERROR_NETWORK_TIMEOUT,
             SpeechRecognizer.ERROR_SERVER,
@@ -167,5 +173,14 @@ class VoiceKbInputMethodService : InputMethodService(), RecognitionListener {
         } catch (_: Exception) {
             raw to R.string.ime_status_sanitize_fallback
         }
+    }
+
+    private fun openAppPermissionSettings() {
+        val appPackage = packageName.takeIf { it.isNotBlank() } ?: return
+        val uri = Uri.fromParts("package", appPackage, null)
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, uri).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        runCatching { startActivity(intent) }
     }
 }

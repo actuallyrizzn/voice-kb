@@ -4,8 +4,10 @@ import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONException
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.IOException
 import java.util.concurrent.TimeUnit
 
 /**
@@ -19,11 +21,12 @@ object VeniceApi {
     const val DEFAULT_BASE_URL = "https://api.venice.ai/api/v1"
 
     private val jsonMedia = "application/json; charset=utf-8".toMediaType()
+    private const val REQUEST_TIMEOUT_SECONDS = 60L
 
     private val client: OkHttpClient = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
+        .connectTimeout(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .readTimeout(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+        .writeTimeout(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS)
         .build()
 
     fun listTextModels(baseUrl: String = DEFAULT_BASE_URL): List<VeniceTextModel> {
@@ -32,28 +35,52 @@ object VeniceApi {
             .url("$root/models")
             .get()
             .build()
-        client.newCall(req).execute().use { resp ->
-            val body = resp.body?.string().orEmpty()
-            if (!resp.isSuccessful) {
-                throw IllegalStateException("Venice models HTTP ${resp.code}: ${body.take(200)}")
+        try {
+            client.newCall(req).execute().use { resp ->
+                val body = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    throw VeniceApiException.Http(
+                        code = resp.code,
+                        message = "Venice models HTTP ${resp.code}: ${body.take(200)}",
+                    )
+                }
+                val json = try {
+                    JSONObject(body)
+                } catch (ex: JSONException) {
+                    throw VeniceApiException.Parsing(
+                        message = "Unable to parse /models response",
+                        cause = ex,
+                    )
+                }
+                val data = json.optJSONArray("data") ?: JSONArray()
+                val out = ArrayList<VeniceTextModel>()
+                for (i in 0 until data.length()) {
+                    val o = data.optJSONObject(i) ?: continue
+                    if (o.optString("type", "") != "text") continue
+                    val id = o.optString("id", "")
+                    if (id.isEmpty()) continue
+                    val spec = o.optJSONObject("model_spec")
+                    val name = o.optString("name", "").ifEmpty { null }
+                    val desc = o.optString("description", "").ifEmpty { null }
+                        ?: spec?.optString("modelSource", "")?.ifEmpty { null }
+                    val score = pricingScoreUsd(spec)
+                    out.add(
+                        VeniceTextModel(
+                            id = id,
+                            displayName = name,
+                            description = desc,
+                            pricingScore = score,
+                        ),
+                    )
+                }
+                out.sortBy { it.pricingScore }
+                return out
             }
-            val json = JSONObject(body)
-            val data = json.optJSONArray("data") ?: JSONArray()
-            val out = ArrayList<VeniceTextModel>()
-            for (i in 0 until data.length()) {
-                val o = data.optJSONObject(i) ?: continue
-                if (o.optString("type", "") != "text") continue
-                val id = o.optString("id", "")
-                if (id.isEmpty()) continue
-                val spec = o.optJSONObject("model_spec")
-                val name = o.optString("name", "").ifEmpty { null }
-                val desc = o.optString("description", "").ifEmpty { null }
-                    ?: spec?.optString("modelSource", "")?.ifEmpty { null }
-                val score = pricingScoreUsd(spec)
-                out.add(VeniceTextModel(id = id, displayName = name, description = desc, pricingScore = score))
-            }
-            out.sortBy { it.pricingScore }
-            return out
+        } catch (ex: IOException) {
+            throw VeniceApiException.Network(
+                message = "Unable to reach Venice models endpoint",
+                cause = ex,
+            )
         }
     }
 
@@ -100,20 +127,52 @@ object VeniceApi {
             .addHeader("Authorization", "Bearer ${apiKey.trim()}")
             .post(bodyJson.toString().toRequestBody(jsonMedia))
             .build()
-        client.newCall(req).execute().use { resp ->
-            val body = resp.body?.string().orEmpty()
-            if (!resp.isSuccessful) {
-                throw IllegalStateException("Venice chat HTTP ${resp.code}: ${body.take(300)}")
+        try {
+            client.newCall(req).execute().use { resp ->
+                val body = resp.body?.string().orEmpty()
+                if (!resp.isSuccessful) {
+                    throw VeniceApiException.Http(
+                        code = resp.code,
+                        message = "Venice chat HTTP ${resp.code}: ${body.take(300)}",
+                    )
+                }
+                val json = try {
+                    JSONObject(body)
+                } catch (ex: JSONException) {
+                    throw VeniceApiException.Parsing(
+                        message = "Unable to parse chat completion response",
+                        cause = ex,
+                    )
+                }
+                val choices = json.optJSONArray("choices") ?: throw IllegalStateException("No choices in response")
+                val first = choices.optJSONObject(0) ?: throw IllegalStateException("Empty choices")
+                val message = first.optJSONObject("message") ?: throw IllegalStateException("No message")
+                val content = message.opt("content")
+                return when (content) {
+                    is String -> content.trim()
+                    else -> content?.toString()?.trim().orEmpty()
+                }
             }
-            val json = JSONObject(body)
-            val choices = json.optJSONArray("choices") ?: throw IllegalStateException("No choices in response")
-            val first = choices.optJSONObject(0) ?: throw IllegalStateException("Empty choices")
-            val message = first.optJSONObject("message") ?: throw IllegalStateException("No message")
-            val content = message.opt("content")
-            return when (content) {
-                is String -> content.trim()
-                else -> content?.toString()?.trim().orEmpty()
-            }
+        } catch (ex: IOException) {
+            throw VeniceApiException.Network(
+                message = "Unable to reach Venice chat endpoint",
+                cause = ex,
+            )
         }
+    }
+
+    sealed class VeniceApiException(
+        message: String,
+        cause: Throwable? = null,
+    ) : IOException(message, cause) {
+        class Network(message: String, cause: Throwable? = null) : VeniceApiException(message, cause)
+
+        class Http(
+            message: String,
+            val code: Int,
+            cause: Throwable? = null,
+        ) : VeniceApiException(message, cause)
+
+        class Parsing(message: String, cause: Throwable? = null) : VeniceApiException(message, cause)
     }
 }

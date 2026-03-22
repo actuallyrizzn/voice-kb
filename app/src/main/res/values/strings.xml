@@ -6,7 +6,11 @@
     <string name="venice_api_key_hint">Venice API key (for text cleanup)</string>
     <string name="sanitize_toggle">Clean up transcript with Venice</string>
     <string name="settings_model_refresh_failed">Could not refresh models. Check internet and try again.</string>
+    <string name="settings_model_refresh_network_error">Network issue while loading models. Check Wi‑Fi/cellular and try again.</string>
+    <string name="settings_model_refresh_server_error">Venice API service is down or overloaded. Try again in a moment.</string>
+    <string name="settings_model_refresh_parse_error">Model data format changed. Please update the app.</string>
     <string name="settings_no_text_models">No text models available right now.</string>
+    <string name="settings_storage_fallback_warning">Using non-encrypted settings storage because secure storage is unavailable on this device.</string>
     <string name="ime_status_sanitize_fallback">Cleanup unavailable. Inserted raw transcript.</string>
     <string name="model_label">Text model</string>
     <string name="save">Save</string>
@@ -16,7 +20,7 @@
     <string name="ime_processing">Cleaning up…</string>
     <string name="ime_error_no_speech">No speech captured</string>
     <string name="ime_error_recognition">Speech recognition unavailable</string>
-    <string name="ime_need_mic_permission">Open Voice KB app and allow microphone</string>
+    <string name="ime_need_mic_permission">Microphone permission is off. Open Voice KB app permissions and allow microphone.</string>
     <string name="settings_keyboard_blurb">Enable this keyboard under Settings → Languages and input → On-screen keyboard, then switch to Voice KB when dictating.</string>
     <string name="privacy_blurb">Speech recognition uses the system speech service. If cleanup is on, your transcript and glossary terms are sent to Venice AI.</string>
 </resources>

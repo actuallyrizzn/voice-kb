@@ -23,8 +23,12 @@ Default API base: `https://api.venice.ai/api/v1`.
 
 ## Privacy
 
-- **Speech audio** goes to the **device / OEM speech service** (same as other apps using `SpeechRecognizer`).
+- **Speech audio** goes to the **system speech service** (same as other apps using `SpeechRecognizer`).
 - If cleanup is on, **the text transcript** plus **glossary / user-dictionary terms** are sent to **Venice**.
+
+## Reliability
+
+- If Android secure storage is unavailable, settings are stored in a regular SharedPreferences file with a warning. This is a safer fallback than crashing the IME but still stores the API key on disk.
 
 ## Requirements
 
