@@ -5,6 +5,21 @@
     <string name="settings_title">Voice KB settings</string>
     <string name="venice_api_key_hint">Venice API key (for text cleanup)</string>
     <string name="sanitize_toggle">Clean up transcript with Venice</string>
+    <string name="custom_glossary_title">Custom terms for context</string>
+    <string name="custom_glossary_hint">One term per line. These terms are added to the sanitization context.</string>
+    <string name="custom_glossary_preview_title">Saved custom terms</string>
+    <string name="system_dictionary_title">System dictionary terms</string>
+    <string name="term_list_empty">No terms found.</string>
+    <string name="system_dictionary_permission_required">Grant system dictionary permission to load words.</string>
+    <string name="system_dictionary_not_available">System dictionary is empty or not exposed to this app on your device. Some keyboards keep terms in private dictionaries.</string>
+    <string name="open_system_dictionary_settings">Open system dictionary settings</string>
+    <string name="clear_glossary">Clear custom terms</string>
+    <string name="clear_glossary_confirm_title">Clear custom terms?</string>
+    <string name="clear_glossary_confirm_message">This will remove all saved custom terms from your device.</string>
+    <string name="clear_glossary_confirm_positive">Clear</string>
+    <string name="clear_glossary_confirm_negative">Cancel</string>
+    <string name="clear_glossary_done">Custom terms cleared.</string>
+    <string name="save_glossary_hint">Settings saved.</string>
     <string name="settings_model_refresh_failed">Could not refresh models. Check internet and try again.</string>
     <string name="settings_model_refresh_network_error">Network issue while loading models. Check Wi‑Fi/cellular and try again.</string>
     <string name="settings_model_refresh_server_error">Venice API service is down or overloaded. Try again in a moment.</string>
@@ -23,4 +38,8 @@
     <string name="ime_need_mic_permission">Microphone permission is off. Open Voice KB app permissions and allow microphone.</string>
     <string name="settings_keyboard_blurb">Enable this keyboard under Settings → Languages and input → On-screen keyboard, then switch to Voice KB when dictating.</string>
     <string name="privacy_blurb">Speech recognition uses the system speech service. If cleanup is on, your transcript and glossary terms are sent to Venice AI.</string>
+    <string name="dictate_hint">Use this app whenever your Bluetooth keyboard is focused. If insertion doesn’t work, enable the accessibility service below.</string>
+    <string name="dictate_enable_accessibility">Enable accessibility insertion</string>
+    <string name="dictate_clipboard_fallback">Accessibility service unavailable. Text copied to clipboard.</string>
+    <string name="accessibility_service_description">Voice KB inserts dictated text into the currently focused field.</string>
 </resources>

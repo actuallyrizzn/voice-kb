@@ -19,79 +19,105 @@
 package com.actuallyrizzn.voicekb
 
 import android.Manifest
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.net.Uri
-import android.inputmethodservice.InputMethodService
 import android.os.Bundle
+import android.provider.Settings
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
-import android.provider.Settings
-import android.view.View
-import android.view.inputmethod.InputConnection
+import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import com.actuallyrizzn.voicekb.databinding.ImeKeyboardBinding
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import com.actuallyrizzn.voicekb.databinding.ActivityDictateBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-class VoiceKbInputMethodService : InputMethodService(), RecognitionListener {
+class DictateActivity : AppCompatActivity(), RecognitionListener {
 
-    private val serviceJob = SupervisorJob()
-    private val serviceScope = CoroutineScope(serviceJob + Dispatchers.Main.immediate)
+    private val activityJob = SupervisorJob()
+    private val activityScope = CoroutineScope(activityJob + Dispatchers.Main.immediate)
 
-    private lateinit var settings: SecureSettingsStore
-    private var binding: ImeKeyboardBinding? = null
+    private lateinit var binding: ActivityDictateBinding
     private var speech: SpeechRecognizer? = null
     private var listening = false
 
-    override fun onCreate() {
-        super.onCreate()
-        settings = SecureSettingsStore(this)
+    private val micPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        if (it) {
+            return@registerForActivityResult
+        }
+        binding.dictateStatus.setText(R.string.ime_need_mic_permission)
+        openAppPermissionSettings()
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        binding = ActivityDictateBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            insets
+        }
+
+        binding.dictateMic.setOnClickListener { onMicClicked() }
+        binding.buttonEnableAccessibility.setOnClickListener {
+            startActivity(Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))
+        }
+        binding.buttonOpenSettings.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
+
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            micPermission.launch(Manifest.permission.RECORD_AUDIO)
+        }
+        if (!VoiceKbAccessibilityService.isEnabled(this)) {
+            binding.dictateStatus.setText(R.string.dictate_hint)
+        }
     }
 
     override fun onDestroy() {
-        serviceJob.cancel()
+        activityJob.cancel()
         speech?.destroy()
         speech = null
         super.onDestroy()
     }
 
-    override fun onCreateInputView(): View {
-        val b = ImeKeyboardBinding.inflate(layoutInflater)
-        binding = b
-        b.imeMic.setOnClickListener { onMicClicked() }
-        return b.root
-    }
-
-    override fun onFinishInputView(finishingInput: Boolean) {
+    override fun onPause() {
         stopListeningInternal()
-        super.onFinishInputView(finishingInput)
+        super.onPause()
     }
 
     private fun onMicClicked() {
-        val b = binding ?: return
         if (listening) return
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
             PackageManager.PERMISSION_GRANTED
         ) {
-            b.imeStatus.setText(R.string.ime_need_mic_permission)
+            binding.dictateStatus.setText(R.string.ime_need_mic_permission)
             openAppPermissionSettings()
             return
         }
         if (!SpeechRecognizer.isRecognitionAvailable(this)) {
-            b.imeStatus.setText(R.string.ime_error_recognition)
+            binding.dictateStatus.setText(R.string.ime_error_recognition)
             return
         }
         startListeningInternal()
     }
 
     private fun startListeningInternal() {
-        val b = binding ?: return
         listening = true
-        b.imeStatus.setText(R.string.ime_listening)
+        binding.dictateStatus.setText(R.string.ime_listening)
         speech?.destroy()
         speech = SpeechRecognizer.createSpeechRecognizer(this).also {
             it.setRecognitionListener(this)
@@ -122,12 +148,12 @@ class VoiceKbInputMethodService : InputMethodService(), RecognitionListener {
     override fun onBufferReceived(buffer: ByteArray?) {}
 
     override fun onEndOfSpeech() {
-        binding?.imeStatus?.setText(R.string.ime_processing)
+        binding.dictateStatus.setText(R.string.ime_processing)
     }
 
     override fun onError(error: Int) {
         listening = false
-        val resId = when (error) {
+        val status = when (error) {
             SpeechRecognizer.ERROR_AUDIO -> R.string.ime_error_no_speech
             SpeechRecognizer.ERROR_CLIENT -> R.string.ime_error_recognition
             SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS -> {
@@ -136,31 +162,35 @@ class VoiceKbInputMethodService : InputMethodService(), RecognitionListener {
             }
             SpeechRecognizer.ERROR_NETWORK,
             SpeechRecognizer.ERROR_NETWORK_TIMEOUT,
-            SpeechRecognizer.ERROR_SERVER,
-            -> R.string.ime_error_recognition
+            SpeechRecognizer.ERROR_SERVER -> R.string.ime_error_recognition
             SpeechRecognizer.ERROR_NO_MATCH,
-            SpeechRecognizer.ERROR_SPEECH_TIMEOUT,
-            -> R.string.ime_error_no_speech
+            SpeechRecognizer.ERROR_SPEECH_TIMEOUT -> R.string.ime_error_no_speech
             SpeechRecognizer.ERROR_RECOGNIZER_BUSY -> R.string.ime_error_recognition
             else -> R.string.ime_error_recognition
         }
-        binding?.imeStatus?.setText(resId)
+        binding.dictateStatus.setText(status)
     }
 
     override fun onResults(results: Bundle?) {
         listening = false
         val matches = results?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
         val raw = matches?.firstOrNull()
-        binding?.imeStatus?.setText(R.string.ime_processing)
+        binding.dictateStatus.setText(R.string.ime_processing)
         if (raw.isNullOrBlank()) {
-            binding?.imeStatus?.setText(R.string.ime_error_no_speech)
+            binding.dictateStatus.setText(R.string.ime_error_no_speech)
             return
         }
-        val ic: InputConnection? = currentInputConnection
-        serviceScope.launch {
-            val result = DictationPipeline.process(this@VoiceKbInputMethodService, raw)
-            ic?.commitText(result.first, 1)
-            binding?.imeStatus?.setText(result.second)
+
+        activityScope.launch {
+            val result = DictationPipeline.process(this@DictateActivity, raw)
+            if (!VoiceKbAccessibilityService.insertTextIntoFocusedField(this@DictateActivity, result.first)) {
+                copyToClipboard(result.first)
+                binding.dictateStatus.setText(R.string.dictate_clipboard_fallback)
+            } else if (result.second != R.string.ime_listen) {
+                binding.dictateStatus.setText(result.second)
+            } else {
+                binding.dictateStatus.setText(R.string.ime_listen)
+            }
         }
     }
 
@@ -168,12 +198,18 @@ class VoiceKbInputMethodService : InputMethodService(), RecognitionListener {
 
     override fun onEvent(eventType: Int, params: Bundle?) {}
 
+    private fun copyToClipboard(text: String) {
+        val clipboard = getSystemService(CLIPBOARD_SERVICE) as? ClipboardManager
+        clipboard?.setPrimaryClip(ClipData.newPlainText("Voice KB", text))
+    }
+
     private fun openAppPermissionSettings() {
-        val appPackage = packageName.takeIf { it.isNotBlank() } ?: return
-        val uri = Uri.fromParts("package", appPackage, null)
-        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, uri).apply {
+        val intent = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            android.net.Uri.fromParts("package", packageName, null),
+        ).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
-        runCatching { startActivity(intent) }
+        startActivity(intent)
     }
 }
