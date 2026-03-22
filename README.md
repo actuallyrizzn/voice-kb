@@ -1,10 +1,10 @@
 # Voice KB
 
-Samsung DeX–friendly **Android input method**: tap the mic, dictate with **on-device speech recognition**, optionally run a **short Venice AI text pass** to clean up the transcript, then insert text at the cursor in whatever field already has focus.
+Samsung DeX–friendly **Android input method**: tap the mic, dictate with the device speech recognizer (which may use system cloud services depending on device settings), optionally run a **short Venice AI text pass** to clean up the transcript, then insert text at the cursor in whatever field already has focus.
 
 ## Architecture
 
-1. **Local STT** — `SpeechRecognizer` / system recognizer (no per-minute cloud STT bill).
+1. **Local STT flow** — `SpeechRecognizer` / system recognizer for normal dictation, with optional Venice cleanup if enabled.
 2. **Context** — Merges:
    - `app/src/main/assets/default_glossary.txt` (shipped; one term per line, `#` comments),
    - optional `filesDir/glossary.txt` on device (same format; add a future editor or push via adb),

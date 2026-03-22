@@ -57,14 +57,21 @@ class SettingsActivity : AppCompatActivity() {
     private fun loadModels() {
         lifecycleScope.launch {
             binding.buttonRefreshModels.isEnabled = false
-            val list = withContext(Dispatchers.IO) {
+            val result = withContext(Dispatchers.IO) {
                 try {
-                    VeniceApi.listTextModels(settings.veniceBaseUrl())
+                    ModelLoadResult(models = VeniceApi.listTextModels(settings.veniceBaseUrl()), error = null)
                 } catch (_: Exception) {
-                    emptyList()
+                    ModelLoadResult(models = emptyList(), error = R.string.settings_model_refresh_failed)
                 }
             }
+            val list = result.models
+            if (result.error != null) {
+                Toast.makeText(this@SettingsActivity, result.error, Toast.LENGTH_LONG).show()
+            }
             models = list
+            if (list.isEmpty()) {
+                Toast.makeText(this@SettingsActivity, R.string.settings_no_text_models, Toast.LENGTH_LONG).show()
+            }
             val labels = list.map { m ->
                 val label = m.displayName?.takeIf { it.isNotEmpty() } ?: m.id
                 val price = if (m.pricingScore < 1e9) {
@@ -88,6 +95,11 @@ class SettingsActivity : AppCompatActivity() {
             binding.buttonRefreshModels.isEnabled = true
         }
     }
+
+    private data class ModelLoadResult(
+        val models: List<VeniceTextModel>,
+        val error: Int?,
+    )
 
     private fun save() {
         val keyView: TextInputEditText = binding.editVeniceKey

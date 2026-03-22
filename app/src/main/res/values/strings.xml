@@ -5,6 +5,9 @@
     <string name="settings_title">Voice KB settings</string>
     <string name="venice_api_key_hint">Venice API key (for text cleanup)</string>
     <string name="sanitize_toggle">Clean up transcript with Venice</string>
+    <string name="settings_model_refresh_failed">Could not refresh models. Check internet and try again.</string>
+    <string name="settings_no_text_models">No text models available right now.</string>
+    <string name="ime_status_sanitize_fallback">Cleanup unavailable. Inserted raw transcript.</string>
     <string name="model_label">Text model</string>
     <string name="save">Save</string>
     <string name="refresh_models">Refresh model list</string>
@@ -15,5 +18,5 @@
     <string name="ime_error_recognition">Speech recognition unavailable</string>
     <string name="ime_need_mic_permission">Open Voice KB app and allow microphone</string>
     <string name="settings_keyboard_blurb">Enable this keyboard under Settings → Languages and input → On-screen keyboard, then switch to Voice KB when dictating.</string>
-    <string name="privacy_blurb">Raw speech uses on-device recognition. If cleanup is on, your transcript and glossary terms are sent to Venice AI.</string>
+    <string name="privacy_blurb">Speech recognition uses the system speech service. If cleanup is on, your transcript and glossary terms are sent to Venice AI.</string>
 </resources>

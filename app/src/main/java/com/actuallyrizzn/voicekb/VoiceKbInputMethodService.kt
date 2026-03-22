@@ -135,9 +135,9 @@ class VoiceKbInputMethodService : InputMethodService(), RecognitionListener {
         }
         val ic: InputConnection? = currentInputConnection
         serviceScope.launch {
-            val text = withContext(Dispatchers.IO) { runPipeline(raw) }
-            ic?.commitText(text, 1)
-            binding?.imeStatus?.setText(R.string.ime_listen)
+            val result = withContext(Dispatchers.IO) { runPipeline(raw) }
+            ic?.commitText(result.first, 1)
+            binding?.imeStatus?.setText(result.second)
         }
     }
 
@@ -145,26 +145,27 @@ class VoiceKbInputMethodService : InputMethodService(), RecognitionListener {
 
     override fun onEvent(eventType: Int, params: Bundle?) {}
 
-    private fun runPipeline(raw: String): String {
+    private fun runPipeline(raw: String): Pair<String, Int> {
         val key = settings.veniceApiKey().trim()
         val wantSanitize = settings.sanitizeEnabled() && key.isNotEmpty()
-        if (!wantSanitize) return raw
+        if (!wantSanitize) return raw to R.string.ime_listen
         val model = settings.veniceModelId().trim()
-        if (model.isEmpty()) return raw
+        if (model.isEmpty()) return raw to R.string.ime_listen
         val base = settings.veniceBaseUrl()
         val terms = TermContextBuilder(this).buildContextString()
         val userPrompt = TranscriptSanitizer.buildUserPrompt(terms, raw)
         val maxTok = (raw.length * 2 + 128).coerceIn(256, 1024)
         return try {
-            TranscriptSanitizer.sanitize(
+            val sanitized = TranscriptSanitizer.sanitize(
                 baseUrl = base,
                 apiKey = key,
                 modelId = model,
                 userPrompt = userPrompt,
                 maxCompletionTokens = maxTok,
-            ).ifBlank { raw }
+            )
+            sanitized.ifBlank { raw } to R.string.ime_listen
         } catch (_: Exception) {
-            raw
+            raw to R.string.ime_status_sanitize_fallback
         }
     }
 }
