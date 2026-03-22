@@ -1,0 +1,2 @@
+# One term per line. Lines starting with # are ignored.
+# Add product names, people, and jargon here (shipped defaults — also edit filesDir glossary.txt on device if you add a writer later).

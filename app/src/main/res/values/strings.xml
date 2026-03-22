@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Voice KB</string>
+    <string name="ime_name">Voice KB</string>
+    <string name="settings_title">Voice KB settings</string>
+    <string name="venice_api_key_hint">Venice API key (for text cleanup)</string>
+    <string name="sanitize_toggle">Clean up transcript with Venice</string>
+    <string name="model_label">Text model</string>
+    <string name="save">Save</string>
+    <string name="refresh_models">Refresh model list</string>
+    <string name="ime_listen">Tap mic to dictate</string>
+    <string name="ime_listening">Listening…</string>
+    <string name="ime_processing">Cleaning up…</string>
+    <string name="ime_error_no_speech">No speech captured</string>
+    <string name="ime_error_recognition">Speech recognition unavailable</string>
+    <string name="ime_need_mic_permission">Open Voice KB app and allow microphone</string>
+    <string name="settings_keyboard_blurb">Enable this keyboard under Settings → Languages and input → On-screen keyboard, then switch to Voice KB when dictating.</string>
+    <string name="privacy_blurb">Raw speech uses on-device recognition. If cleanup is on, your transcript and glossary terms are sent to Venice AI.</string>
+</resources>
