@@ -32,6 +32,7 @@
     <string name="refresh_models">Refresh model list</string>
     <string name="ime_listen">Tap mic to dictate</string>
     <string name="ime_listening">Listening…</string>
+    <string name="ime_listening_tap_stop">Listening… tap mic again to finish</string>
     <string name="ime_processing">Cleaning up…</string>
     <string name="ime_error_no_speech">No speech captured</string>
     <string name="ime_error_recognition">Speech recognition unavailable</string>

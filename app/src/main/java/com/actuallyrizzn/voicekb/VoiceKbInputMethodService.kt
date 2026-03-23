@@ -26,7 +26,6 @@ import android.inputmethodservice.InputMethodService
 import android.os.Build
 import android.os.Bundle
 import android.speech.RecognitionListener
-import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.provider.Settings
 import android.view.KeyEvent
@@ -85,7 +84,15 @@ class VoiceKbInputMethodService : InputMethodService(), RecognitionListener {
 
     private fun onMicClicked() {
         val b = binding ?: return
-        if (listening) return
+        if (listening) {
+            b.imeStatus.setText(R.string.ime_processing)
+            try {
+                speech?.stopListening()
+            } catch (_: Exception) {
+                // ignore
+            }
+            return
+        }
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
             PackageManager.PERMISSION_GRANTED
         ) {
@@ -103,16 +110,12 @@ class VoiceKbInputMethodService : InputMethodService(), RecognitionListener {
     private fun startListeningInternal() {
         val b = binding ?: return
         listening = true
-        b.imeStatus.setText(R.string.ime_listening)
+        b.imeStatus.setText(R.string.ime_listening_tap_stop)
         speech?.destroy()
         speech = SpeechRecognizer.createSpeechRecognizer(this).also {
             it.setRecognitionListener(this)
         }
-        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-            putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
-            putExtra(RecognizerIntent.EXTRA_PARTIAL_RESULTS, true)
-        }
-        speech?.startListening(intent)
+        speech?.startListening(SpeechListenIntent.create())
     }
 
     private fun stopListeningInternal() {
