@@ -29,7 +29,9 @@ import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
 import android.provider.Settings
+import android.view.KeyEvent
 import android.view.View
+import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
@@ -66,6 +68,8 @@ class VoiceKbInputMethodService : InputMethodService(), RecognitionListener {
         binding = b
         b.imeMic.setOnClickListener { onMicClicked() }
         b.imeSwitchKeyboard.setOnClickListener { switchToNextKeyboard() }
+        b.imeBackspace.setOnClickListener { sendBackspace() }
+        b.imeEnter.setOnClickListener { sendEnter() }
         b.imeSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -175,6 +179,41 @@ class VoiceKbInputMethodService : InputMethodService(), RecognitionListener {
     override fun onPartialResults(partialResults: Bundle?) {}
 
     override fun onEvent(eventType: Int, params: Bundle?) {}
+
+    private fun sendBackspace() {
+        val ic = currentInputConnection ?: return
+        val selected = ic.getSelectedText(0)
+        if (selected != null && selected.isNotEmpty()) {
+            ic.commitText("", 1)
+            return
+        }
+        if (!ic.deleteSurroundingText(1, 0)) {
+            dispatchKeyDownUp(ic, KeyEvent.KEYCODE_DEL)
+        }
+    }
+
+    private fun sendEnter() {
+        val ic = currentInputConnection ?: return
+        val ei = currentInputEditorInfo
+        if (ei != null) {
+            val action = ei.imeOptions and EditorInfo.IME_MASK_ACTION
+            val noEnterAsAction = ei.imeOptions and EditorInfo.IME_FLAG_NO_ENTER_ACTION != 0
+            if (!noEnterAsAction &&
+                action != EditorInfo.IME_ACTION_UNSPECIFIED &&
+                action != EditorInfo.IME_ACTION_NONE
+            ) {
+                if (ic.performEditorAction(action)) return
+            }
+        }
+        if (!ic.commitText("\n", 1)) {
+            dispatchKeyDownUp(ic, KeyEvent.KEYCODE_ENTER)
+        }
+    }
+
+    private fun dispatchKeyDownUp(ic: InputConnection, keyCode: Int) {
+        ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, keyCode))
+        ic.sendKeyEvent(KeyEvent(KeyEvent.ACTION_UP, keyCode))
+    }
 
     @Suppress("DEPRECATION")
     private fun switchToNextKeyboard() {

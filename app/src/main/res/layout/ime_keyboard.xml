@@ -56,6 +56,26 @@
             android:layout_weight="1" />
 
         <ImageButton
+            android:id="@+id/imeBackspace"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/ime_backspace"
+            android:scaleType="center"
+            android:src="@drawable/ic_ime_backspace"
+            android:tint="?android:attr/textColorPrimary" />
+
+        <ImageButton
+            android:id="@+id/imeEnter"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/ime_enter"
+            android:scaleType="center"
+            android:src="@drawable/ic_ime_enter"
+            android:tint="?android:attr/textColorPrimary" />
+
+        <ImageButton
             android:id="@+id/imeSettings"
             android:layout_width="48dp"
             android:layout_height="48dp"
