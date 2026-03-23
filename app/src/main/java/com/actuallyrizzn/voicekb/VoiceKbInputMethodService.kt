@@ -23,6 +23,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.inputmethodservice.InputMethodService
+import android.os.Build
 import android.os.Bundle
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
@@ -30,6 +31,7 @@ import android.speech.SpeechRecognizer
 import android.provider.Settings
 import android.view.View
 import android.view.inputmethod.InputConnection
+import android.view.inputmethod.InputMethodManager
 import androidx.core.content.ContextCompat
 import com.actuallyrizzn.voicekb.databinding.ImeKeyboardBinding
 import kotlinx.coroutines.CoroutineScope
@@ -63,6 +65,12 @@ class VoiceKbInputMethodService : InputMethodService(), RecognitionListener {
         val b = ImeKeyboardBinding.inflate(layoutInflater)
         binding = b
         b.imeMic.setOnClickListener { onMicClicked() }
+        b.imeSwitchKeyboard.setOnClickListener { switchToNextKeyboard() }
+        b.imeSettings.setOnClickListener {
+            startActivity(Intent(this, SettingsActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            })
+        }
         return b.root
     }
 
@@ -167,6 +175,16 @@ class VoiceKbInputMethodService : InputMethodService(), RecognitionListener {
     override fun onPartialResults(partialResults: Bundle?) {}
 
     override fun onEvent(eventType: Int, params: Bundle?) {}
+
+    @Suppress("DEPRECATION")
+    private fun switchToNextKeyboard() {
+        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            switchToNextInputMethod(false)
+        } else {
+            imm.switchToNextInputMethod(window.window?.attributes?.token, false)
+        }
+    }
 
     private fun openAppPermissionSettings() {
         val appPackage = packageName.takeIf { it.isNotBlank() } ?: return

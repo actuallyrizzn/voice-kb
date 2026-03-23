@@ -42,4 +42,5 @@
     <string name="dictate_enable_accessibility">Enable accessibility insertion</string>
     <string name="dictate_clipboard_fallback">Accessibility service unavailable. Text copied to clipboard.</string>
     <string name="accessibility_service_description">Voice KB inserts dictated text into the currently focused field.</string>
+    <string name="ime_switch_keyboard">Switch keyboard</string>
 </resources>
