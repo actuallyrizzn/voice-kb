@@ -10,3 +10,11 @@
 *.aab
 *.jks
 *.keystore
+
+# Local API keys / env (never commit)
+.env
+.env.*
+venice_api_key.txt
+**/venice_api_key.txt
+scripts/.api_key
+scripts/.venice_api_key
