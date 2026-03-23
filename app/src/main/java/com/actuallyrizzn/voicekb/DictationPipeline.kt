@@ -49,8 +49,19 @@ object DictationPipeline {
                 modelId = model,
                 userPrompt = userPrompt,
                 maxCompletionTokens = maxTok,
-            )
-            sanitized.ifBlank { raw } to R.string.ime_listen
+            ).trim()
+            val drift = SanitizerOutputGuard.shouldUseRawInstead(raw, sanitized)
+            val text = when {
+                drift -> raw
+                sanitized.isBlank() -> raw
+                else -> sanitized
+            }
+            val status = if (drift) {
+                R.string.ime_status_sanitize_fallback
+            } else {
+                R.string.ime_listen
+            }
+            text to status
         } catch (_: Exception) {
             raw to R.string.ime_status_sanitize_fallback
         }
