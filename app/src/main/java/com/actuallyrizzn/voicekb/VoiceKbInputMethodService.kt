@@ -178,11 +178,19 @@ class VoiceKbInputMethodService : InputMethodService(), RecognitionListener {
 
     @Suppress("DEPRECATION")
     private fun switchToNextKeyboard() {
-        val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            switchToNextInputMethod(false)
-        } else {
-            imm.switchToNextInputMethod(window.window?.attributes?.token, false)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                switchToNextInputMethod(false)
+            } else {
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                val token = window?.window?.attributes?.token
+                imm.switchToNextInputMethod(token, false)
+            }
+        } catch (_: Exception) {
+            runCatching {
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.showInputMethodPicker()
+            }
         }
     }
 

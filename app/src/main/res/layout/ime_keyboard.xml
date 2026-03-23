@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  IME input view must not use Material-only widgets (e.g. FloatingActionButton):
+  the layout inflater uses the system input-method theme, not Theme.VoiceKb, and
+  Material components crash with "requires Theme.MaterialComponents".
+-->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="200dp"
     android:background="?android:attr/colorBackground">
@@ -11,19 +15,22 @@
         android:layout_height="wrap_content"
         android:layout_gravity="top|center_horizontal"
         android:gravity="center"
-        android:paddingTop="16dp"
         android:paddingHorizontal="16dp"
+        android:paddingTop="16dp"
         android:text="@string/ime_listen"
-        android:textAppearance="?attr/textAppearanceBodyMedium" />
+        android:textColor="?android:attr/textColorPrimary"
+        android:textSize="14sp" />
 
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
+    <ImageButton
         android:id="@+id/imeMic"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="64dp"
+        android:layout_height="64dp"
         android:layout_gravity="center"
+        android:background="@drawable/ime_mic_circle"
         android:contentDescription="@string/ime_listen"
-        android:src="@drawable/ic_mic"
-        app:fabSize="normal" />
+        android:padding="16dp"
+        android:scaleType="centerInside"
+        android:src="@drawable/ic_mic_on_primary" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -37,10 +44,11 @@
             android:id="@+id/imeSwitchKeyboard"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/ime_switch_keyboard"
             android:scaleType="center"
-            android:src="@drawable/ic_keyboard_switch" />
+            android:src="@drawable/ic_keyboard_switch"
+            android:tint="?android:attr/textColorPrimary" />
 
         <View
             android:layout_width="0dp"
@@ -51,9 +59,10 @@
             android:id="@+id/imeSettings"
             android:layout_width="48dp"
             android:layout_height="48dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
+            android:background="?android:attr/selectableItemBackgroundBorderless"
             android:contentDescription="@string/settings_title"
             android:scaleType="center"
-            android:src="@drawable/ic_settings" />
+            android:src="@drawable/ic_settings"
+            android:tint="?android:attr/textColorPrimary" />
     </LinearLayout>
 </FrameLayout>
