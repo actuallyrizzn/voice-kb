@@ -24,11 +24,22 @@ package com.actuallyrizzn.voicekb
  */
 object SanitizerOutputGuard {
 
+    /**
+     * Model returned a short clarifying question or filler instead of a transcript—drop it.
+     */
+    private val metaOnlyReply = Regex(
+        """(?is)^\s*(what'?s\s+going\s+on\s*\??|what\s+is\s+going\s+on\s*\??|what\s+do\s+you\s+mean\s*\??|what\s+happened\s*\??|huh\s*\??|what\s*\??|can\s+you\s+(repeat|clarify|say\s+that(\s+again)?)\s*\??|could\s+you\s+(repeat|clarify)\s*\??|i\s+don'?t\s+understand\s*[.!?]?|i'?m\s+not\s+sure(\s+what\s+you\s+(mean|want))?\s*[.!?]?|sorry\s*[,.]?\s*what\s*\??)\s*$""",
+    )
+
     fun shouldUseRawInstead(raw: String, sanitized: String): Boolean {
         val r = raw.trim()
         val o = sanitized.trim()
         if (o.isEmpty()) return true
         if (r.isEmpty()) return false
+
+        if (o.length <= 120 && metaOnlyReply.matches(o)) {
+            return true
+        }
 
         if (o.length > r.length * 4 && r.length < 400) return true
 

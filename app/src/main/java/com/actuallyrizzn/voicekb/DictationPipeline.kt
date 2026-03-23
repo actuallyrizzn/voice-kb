@@ -37,6 +37,10 @@ object DictationPipeline {
             return@withContext raw to R.string.ime_listen
         }
 
+        if (raw.isBlank()) {
+            return@withContext raw to R.string.ime_listen
+        }
+
         val base = settings.veniceBaseUrl()
         val terms = TermContextBuilder(context).buildContextString()
         val userPrompt = TranscriptSanitizer.buildUserPrompt(terms, raw)
