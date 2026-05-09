@@ -81,6 +81,8 @@ Model list is fetched from `GET /models` (no API key required) and sorted by pri
 
 ### Building from source
 
+**On a PC** (Android Studio or a normal Linux/macOS SDK):
+
 ```bash
 git clone https://github.com/actuallyrizzn/voice-kb.git
 cd voice-kb
@@ -88,6 +90,17 @@ cd voice-kb
 ./gradlew assembleDebug
 # APK at app/build/outputs/apk/debug/app-debug.apk
 ```
+
+**On this phone (Termux / Proot aarch64, no Android Studio):** Google’s `sdkmanager` **build-tools** and AGP’s Maven **AAPT2** are **x86_64**; they will not run on ARM. Use the same bootstrap as **`termux-device-bridge`**:
+
+```bash
+pkg install openjdk-17 curl unzip   # Termux; Proot Debian: apt install openjdk-17-jdk curl unzip
+cd voice-kb
+chmod +x tools/*.sh
+./tools/assemble-debug-on-termux.sh
+```
+
+Scripts live in **`tools/`** here (`bootstrap-termux-android-sdk.sh`, `assemble-debug-on-termux.sh`). Workspace write-up: **`docs/android-native-gradle-termux-aarch64.md`** (same **lzhiyong** overlay pattern as **`docs/app-toolchain.md`** for Buildozer).
 
 ## Permissions
 
